@@ -75,7 +75,7 @@ if (-not (Test-Path $autoFolder)) {
 }
 
 # URL de tu script raw en GitHub
-$scriptUrl = "https://raw.githubusercontent.com/usuario/repositorio/rama/script.py"  # Cambia esto a tu URL
+$scriptUrl = "https://raw.githubusercontent.com/mrmaruan/azure/refs/heads/main/1.py"  # Cambia esto a tu URL
 $scriptPath = Join-Path $autoFolder "1.py"
 
 Write-Host "Downloading script.py from GitHub..."
