@@ -1,3 +1,4 @@
+# Permitir ejecución de scripts temporalmente
 Set-ExecutionPolicy Bypass -Scope Process -Force
 
 # Instalar Chocolatey si no existe
@@ -7,23 +8,38 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
 }
 
 # Instalar Python
-Write-Host "Installing Python ${python_version}..."
-choco install python --version=${python_version} -y
+$python_version = "3.11.4"
+Write-Host "Installing Python $python_version..."
+choco install python --version=$python_version -y
 
-# Asegurarse de que Python y pip estén en el PATH
-$env:PATH += ";$($env:ProgramFiles)\Python$($python_version.Replace('.',''))\Scripts;$($env:ProgramFiles)\Python$($python_version.Replace('.',''))\"
-
-# Instalar Visual Studio Code
-Write-Host "Installing Visual Studio Code..."
-choco install vscode -y
-
-# Instalar extensión de Python en VSCode
-Write-Host "Installing Python extension in VSCode..."
-code --install-extension ms-python.python --force
+# Asegurar que Python y pip estén en PATH
+$pythonPath = "${env:ProgramFiles}\Python$($python_version.Replace('.', ''))"
+$env:PATH += ";$pythonPath;$pythonPath\Scripts"
 
 # Instalar paquetes de Python
 Write-Host "Installing Python packages: tzdata, requests..."
 pip install --upgrade pip
 pip install tzdata requests
 
+# Instalar Visual Studio Code
+Write-Host "Installing Visual Studio Code..."
+choco install vscode -y
+
+# Asegurar ruta completa a code.cmd
+$VSCodePath = "${env:ProgramFiles}\Microsoft VS Code\bin\code.cmd"
+
+# Lista de extensiones que quieres instalar
+$extensions = @(
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.python-devtools"
+)
+
+# Instalar extensiones en VSCode
+foreach ($ext in $extensions) {
+    Write-Host "Installing VSCode extension: $ext"
+    Start-Process -FilePath $VSCodePath -ArgumentList "--install-extension $ext --force" -Wait
+}
+
 Write-Host "Installation completed successfully."
+
