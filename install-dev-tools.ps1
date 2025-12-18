@@ -1,5 +1,5 @@
 # ================================
-# Script completo de setup
+# Script completo de setup (FIXED)
 # ================================
 
 # Permitir ejecución de scripts temporalmente
@@ -26,7 +26,7 @@ $env:PATH += ";$pythonPath;$pythonPath\Scripts"
 
 # Instalar paquetes de Python
 Write-Host "Installing Python packages: tzdata, requests..."
-pip install --upgrade pip
+python -m pip install --upgrade pip
 pip install tzdata requests
 
 # ------------------------------
@@ -36,51 +36,64 @@ Write-Host "Installing Visual Studio Code..."
 choco install vscode -y
 
 # ------------------------------
-# Instalar extensiones en VSCode
+# Detectar code.cmd REAL (CLAVE)
 # ------------------------------
-# Ruta completa a code.cmd
-$VSCodePath = "$env:ProgramFiles\Microsoft VS Code\bin\code.cmd"
+$possibleCodePaths = @(
+    "$env:LOCALAPPDATA\Programs\Microsoft VS Code\bin\code.cmd",
+    "$env:ProgramFiles\Microsoft VS Code\bin\code.cmd"
+)
 
-# Lista de extensiones
+$VSCodePath = $possibleCodePaths | Where-Object { Test-Path $_ } | Select-Object -First 1
+
+if (-not $VSCodePath) {
+    Write-Error "VS Code executable (code.cmd) not found. Installation failed."
+    exit 1
+}
+
+Write-Host "Using VS Code executable at: $VSCodePath"
+
+# Inicializar VS Code (crea perfil del usuario)
+& $VSCodePath --version | Out-Null
+
+# ------------------------------
+# Instalar extensiones de VSCode
+# ------------------------------
 $extensions = @(
     "ms-python.python",
     "ms-python.vscode-pylance",
     "ms-python.python-devtools"
 )
 
-# Esperar que VSCode inicialice perfil
-Start-Process -FilePath $VSCodePath -ArgumentList "--version" -Wait
-
-# Listar extensiones ya instaladas
 $installed = & $VSCodePath --list-extensions
 
 foreach ($ext in $extensions) {
     if ($installed -contains $ext) {
         Write-Host "$ext already installed." -ForegroundColor Gray
     } else {
-        Write-Host "Installing $ext..." -ForegroundColor White
+        Write-Host "Installing $ext..." -ForegroundColor Cyan
         & $VSCodePath --install-extension $ext --force
     }
 }
 
 # ------------------------------
-# Crear carpeta 'auto' en Documentos y descargar script.py
+# Crear carpeta 'auto' en Documentos
 # ------------------------------
-$autoFolder = "$env:USERPROFILE\Documents\auto"
+$autoFolder = Join-Path $env:USERPROFILE "Documents\auto"
+
 if (-not (Test-Path $autoFolder)) {
     New-Item -ItemType Directory -Path $autoFolder | Out-Null
     Write-Host "Created folder: $autoFolder"
-} else {
-    Write-Host "Folder already exists: $autoFolder"
 }
 
-# URL de tu script raw en GitHub
-$scriptUrl = "https://raw.githubusercontent.com/mrmaruan/azure/refs/heads/main/1.py"  # Cambia esto a tu URL
+# ------------------------------
+# Descargar script.py desde GitHub
+# ------------------------------
+$scriptUrl = "https://raw.githubusercontent.com/mrmaruan/azure/main/1.py"
 $scriptPath = Join-Path $autoFolder "1.py"
 
-Write-Host "Downloading script.py from GitHub..."
+Write-Host "Downloading script from GitHub..."
 Invoke-WebRequest -Uri $scriptUrl -OutFile $scriptPath
-Write-Host "script.py saved to $scriptPath"
+Write-Host "Script saved to $scriptPath"
 
 # ------------------------------
 Write-Host "Installation completed successfully."
